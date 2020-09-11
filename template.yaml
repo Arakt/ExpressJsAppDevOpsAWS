@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters: 
+  GithubOwner:
+    Type: String
+    Default: Arakt
+  GithubRepo:
+    Type: String
+    Default: my-test-app
+  GithubBranchProd:
+    Type: String
+    Default: master
+  GithubBranchStage:
+    Type: String
+    Default: staging
+  GithubOAuthToken:
+    Type: String
+    Description: "Github personal access token"
+  ApplicationName:
+    Type: String
+    Default: Project
+    Description: "CodeDeploy application name"
+  DeploymentGroupStage:
+    Type: String
+    Default: ProjectDeployStageGroup
+    Description: "Fleet configured for staging in CodeDeploy"
+  DeploymentGroupProd:
+    Description: Fleet configured for production in CodeDeploy
+    Type: String
+    Default: ProjectDeployProdGroup
+
+Resources:
+
+Resources:
+  CodePipelineStage:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      RoleArn: !GetAtt CodePipeLineRole.Arn
+      ArtifactStore:
+        Location: !Ref PipelineBucket
+        Type: S3
+      Stages:
+        - 
+          Name: Source
+          Actions: 
+            - 
+              Name: SourceAction
+              ActionTypeId: 
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              OutputArtifacts: 
+                - 
+                  Name: AppStage
+              Configuration:
+                Owner: !Ref GithubOwner
+                Repo: !Ref GithubRepo
+                Branch: !Ref GithubBranchStage
+                OAuthToken: !Ref GithubOAuthToken
+        - 
+          Name: Deploy
+          Actions:
+            - 
+              Name: DeployAction
+              ActionTypeId:
+                  Category: Deploy
+                  Owner: AWS
+                  Version: 1
+                  Provider: CodeDeploy
+                InputArtifacts:
+                  - 
+                    Name: AppStage                
+                Configuration:
+                  ApplicationName: !Ref ApplicationName
+                  DeploymentGroupStageName: !Ref DeploymentGroupStage
+                RunOrder: 1
+
+  CodePipelineProd:
+    Type: 'AWS::CodePipeline::Pipeline'
+    Properties:
+      RoleArn: !GetAtt CodePipeLineRole.Arn
+      ArtifactStore:
+        Location: !Ref PipelineBucket
+        Type: S3
+      Stages:
+        - 
+          Name: Source
+          Actions: 
+            - 
+              Name: SourceAction
+              ActionTypeId: 
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              OutputArtifacts: 
+                - 
+                  Name: AppProd
+              Configuration:
+                Owner: !Ref GithubOwner
+                Repo: !Ref GithubRepo
+                Branch: !Ref GithubBranchProd
+                OAuthToken: !Ref GithubOAuthToken
+        - 
+          Name: Deploy
+          Actions:
+            - 
+              Name: DeployAction
+              ActionTypeId:
+                  Category: Deploy
+                  Owner: AWS
+                  Version: 1
+                  Provider: CodeDeploy
+                InputArtifacts:
+                  - 
+                    Name: AppProd                
+                Configuration:
+                  ApplicationName: !Ref ApplicationName
+                  DeploymentGroupStageName: !Ref DeploymentGroupProd
+                RunOrder: 1
+
+  CodePipeLineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - 
+            Effect: Allow
+            Principal:
+              Service:
+                - "codepipeline.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: Allow
+                Action:
+                  - "codedeploy:CreateDeployment"
+                  - "codedeploy:GetApplicationRevision"
+                  - "codedeploy:GetDeployment"
+                  - "codedeploy:GetDeploymentConfig"
+                  - "codedeploy:RegisterApplicationRevision"
+                Resource: "*"
+              - 
+                Effect: Allow
+                Action:
+                  - "codebuild:BatchGetBuilds"
+                  - "codebuild:StartBuild"
+                Resource: "*"
+              - 
+                Effect: Allow
+                Action:
+                  - "devicefarm:ListProjects"
+                  - "devicefarm:ListDevicePools"
+                  - "devicefarm:GetRun"
+                  - "devicefarm:GetUpload"
+                  - "devicefarm:CreateUpload"
+                  - "devicefarm:ScheduleRun"
+                Resource: "*"
+              - 
+                Effect: Allow
+                Action:
+                  - "iam:PassRole"
+                Resource: "*"
+              - 
+                Effect: Allow
+                Action:
+                  - "elasticbeanstalk:*"
+                  - "ec2:*"
+                  - "elasticloadbalancing:*"
+                  - "autoscaling:*"
+                  - "cloudwatch:*"
+                  - "s3:*"
+                  - "sns:*"
+                  - "cloudformation:*"
+                  - "rds:*"
+                  - "sqs:*"
+                  - "ecs:*"
+                Resource: "*"
