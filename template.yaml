@@ -29,8 +29,6 @@ Parameters:
     Default: ProjectDeployProdGroup
 
 Resources:
-
-Resources:
   CodePipelineStage:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
@@ -63,17 +61,17 @@ Resources:
             - 
               Name: DeployAction
               ActionTypeId:
-                  Category: Deploy
-                  Owner: AWS
-                  Version: 1
-                  Provider: CodeDeploy
-                InputArtifacts:
-                  - 
-                    Name: AppStage                
-                Configuration:
-                  ApplicationName: !Ref ApplicationName
-                  DeploymentGroupStageName: !Ref DeploymentGroupStage
-                RunOrder: 1
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CodeDeploy
+              InputArtifacts:
+                - 
+                  Name: AppStage                
+              Configuration:
+                ApplicationName: !Ref ApplicationName
+                DeploymentGroupStageName: !Ref DeploymentGroupStage
+              RunOrder: 1
 
   CodePipelineProd:
     Type: 'AWS::CodePipeline::Pipeline'
@@ -107,17 +105,17 @@ Resources:
             - 
               Name: DeployAction
               ActionTypeId:
-                  Category: Deploy
-                  Owner: AWS
-                  Version: 1
-                  Provider: CodeDeploy
-                InputArtifacts:
-                  - 
-                    Name: AppProd                
-                Configuration:
-                  ApplicationName: !Ref ApplicationName
-                  DeploymentGroupStageName: !Ref DeploymentGroupProd
-                RunOrder: 1
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CodeDeploy
+              InputArtifacts:
+                - 
+                  Name: AppProd                
+              Configuration:
+                ApplicationName: !Ref ApplicationName
+                DeploymentGroupStageName: !Ref DeploymentGroupProd
+              RunOrder: 1
 
   CodePipeLineRole:
     Type: AWS::IAM::Role
@@ -182,3 +180,7 @@ Resources:
                   - "sqs:*"
                   - "ecs:*"
                 Resource: "*"
+
+  PipelineBucket: 
+    Type: 'AWS::S3::Bucket'
+    Properties: {}
